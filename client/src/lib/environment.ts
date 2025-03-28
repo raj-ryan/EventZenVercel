@@ -7,7 +7,7 @@ const isProd = import.meta.env.PROD;
 
 // API URL will be different depending on environment
 export const API_URL = isProd 
-  ? '/.netlify/functions/api' // Production API URL (Netlify Functions)
+  ? '/api' // Production API URL (Vercel API Routes)
   : '/api'; // Development API URL
 
 // Export other environment variables as needed

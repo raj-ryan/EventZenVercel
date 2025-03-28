@@ -50,15 +50,30 @@ async function ensureDefaultDemoUser() {
   }
 }
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: Express): Promise<Express> {
   // Simple ping endpoint for deployment testing
-  app.get("/api/ping", (req, res) => {
-    res.json({ 
-      status: "ok", 
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || "development",
-      version: "1.0"
-    });
+  app.get("/api/ping", async (req, res) => {
+    try {
+      // Test database connection
+      const testQuery = await storage.getUsers(1);
+      
+      res.json({ 
+        status: "ok", 
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || "development",
+        version: "1.0",
+        database: "connected",
+        testQuery: testQuery ? "success" : "no results"
+      });
+    } catch (error) {
+      console.error("Database test failed:", error);
+      res.status(500).json({
+        status: "error",
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : "Unknown error",
+        database: "disconnected"
+      });
+    }
   });
   
   // Forward client routes to API routes (for direct URL access)
@@ -416,20 +431,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Event routes
   app.get("/api/events", async (req, res) => {
     try {
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
-      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
-      const category = req.query.category as string | undefined;
-      
-      let events;
-      if (category) {
-        events = await storage.getEventsByCategory(category, limit, offset);
-      } else {
-        events = await storage.getEvents(limit, offset);
-      }
-      
+      console.log("Fetching events...");
+      const events = await storage.getEvents();
+      console.log(`Successfully fetched ${events.length} events`);
       res.json(events);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching events" });
+      console.error("Error fetching events:", error);
+      res.status(500).json({ error: "Failed to fetch events", details: error.message });
     }
   });
   
@@ -606,13 +614,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Venue routes
   app.get("/api/venues", async (req, res) => {
     try {
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
-      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
-      
-      const venues = await storage.getVenues(limit, offset);
+      console.log("Fetching venues...");
+      const venues = await storage.getVenues();
+      console.log(`Successfully fetched ${venues.length} venues`);
       res.json(venues);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching venues" });
+      console.error("Error fetching venues:", error);
+      res.status(500).json({ error: "Failed to fetch venues", details: error.message });
     }
   });
   
@@ -1110,5 +1118,5 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  return httpServer;
+  return app;
 }
