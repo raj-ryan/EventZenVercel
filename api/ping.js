@@ -1,5 +1,5 @@
-// Super simplified ping endpoint for Vercel
-const { Pool } = require('@neondatabase/serverless');
+// Ping endpoint with MongoDB connection test
+const { connectToDatabase } = require('./mongo');
 
 module.exports = async (req, res) => {
   console.log('Ping received at:', new Date().toISOString());
@@ -20,37 +20,35 @@ module.exports = async (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     message: 'API is working properly!',
     vercel: true,
-    database: false
+    database: false,
+    type: 'MongoDB'
   };
   
-  // Test database connection
-  let pool;
+  // Test MongoDB connection
   try {
-    // Get database connection string
-    const connectionString = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
+    const { client, db } = await connectToDatabase();
     
-    if (!connectionString) {
-      console.error("No database connection string available");
-      response.databaseError = "No connection string available";
-    } else {
-      // Create direct connection pool
-      pool = new Pool({ connectionString });
-      const result = await pool.query('SELECT NOW() as now');
+    // Run a simple command to verify the connection
+    const result = await db.command({ ping: 1 });
+    
+    if (result.ok === 1) {
       response.database = true;
-      response.databaseTimestamp = result.rows[0].now;
-      console.log('Database connection test successful');
+      response.databaseTimestamp = new Date().toISOString();
+      
+      // Get collection counts
+      const venues = await db.collection('venues').countDocuments();
+      const events = await db.collection('events').countDocuments();
+      
+      response.collections = {
+        venues,
+        events
+      };
+      
+      console.log('MongoDB connection test successful');
     }
   } catch (error) {
-    console.error('Database connection test failed:', error);
+    console.error('MongoDB connection test failed:', error);
     response.databaseError = error.message;
-  } finally {
-    if (pool) {
-      try {
-        await pool.end();
-      } catch (err) {
-        console.error('Error closing pool:', err);
-      }
-    }
   }
   
   res.status(200).json(response);

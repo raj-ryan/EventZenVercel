@@ -1,64 +1,67 @@
-// Super simplified Events API endpoint for Vercel
-const { Pool } = require('@neondatabase/serverless');
+// Events API endpoint using MongoDB
+const { connectToDatabase } = require('./mongo');
 
 module.exports = async (req, res) => {
   console.log("Events API called:", req.url);
   
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
   // Handle OPTIONS request (preflight)
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // Only handle GET requests for now to fix the display issue
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  let pool;
   try {
-    // Get database connection string
-    const connectionString = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
+    // Connect to MongoDB
+    const { db } = await connectToDatabase();
+    const eventsCollection = db.collection('events');
     
-    if (!connectionString) {
-      console.error("No database connection string available");
-      return res.status(500).json({ error: 'Database configuration missing' });
+    // Handle GET request (list events)
+    if (req.method === 'GET') {
+      console.log("Fetching events from MongoDB...");
+      
+      // Simple query to get events ordered by date
+      const events = await eventsCollection
+        .find({})
+        .sort({ date: -1 })
+        .limit(50)
+        .toArray();
+      
+      console.log(`Retrieved ${events.length} events from MongoDB`);
+      return res.status(200).json(events);
     }
     
-    // Create direct connection pool
-    pool = new Pool({ connectionString });
+    // Handle POST request (create event)
+    else if (req.method === 'POST') {
+      const eventData = req.body;
+      
+      if (!eventData || !eventData.name || !eventData.venueId) {
+        return res.status(400).json({ error: 'Missing required event fields' });
+      }
+      
+      // Set timestamps
+      eventData.createdAt = new Date();
+      eventData.updatedAt = new Date();
+      
+      // Insert new event
+      const result = await eventsCollection.insertOne(eventData);
+      const newEvent = await eventsCollection.findOne({ _id: result.insertedId });
+      
+      return res.status(201).json(newEvent);
+    }
     
-    console.log("Running events query...");
-    
-    // Simple query to get events
-    const result = await pool.query(`
-      SELECT * FROM events
-      ORDER BY date DESC
-      LIMIT 50
-    `);
-    
-    console.log(`Got ${result.rows.length} events`);
-    
-    // Return result
-    return res.status(200).json(result.rows);
+    // Handle other methods
+    else {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error processing MongoDB request:", error);
     return res.status(500).json({ 
-      error: 'Could not fetch events',
+      error: 'Database operation failed', 
       message: error.message
     });
-  } finally {
-    // Close pool
-    if (pool) {
-      try {
-        await pool.end();
-      } catch (err) {
-        console.error("Error closing pool:", err);
-      }
-    }
   }
 } 

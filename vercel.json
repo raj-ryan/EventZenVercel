@@ -19,6 +19,7 @@
     { "src": "/(.*)", "dest": "/index.html" }
   ],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "MONGODB_URI": "mongodb+srv://eventzen:eventzen123@cluster0.g7xsb.mongodb.net/eventzen?retryWrites=true&w=majority"
   }
 } 
