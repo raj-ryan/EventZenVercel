@@ -1,7 +1,7 @@
 // Venues API endpoint using MongoDB
 const { connectToDatabase } = require('./mongo');
 
-module.exports = async (req, res) => {
+async function handler(req, res) {
   console.log("Venues API called:", req.url);
   
   // Set CORS headers
@@ -64,4 +64,7 @@ module.exports = async (req, res) => {
       message: error.message
     });
   }
-} 
+}
+
+// Export the handler function for Vercel serverless functions
+module.exports = handler; 

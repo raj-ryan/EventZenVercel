@@ -1,7 +1,7 @@
 // Ping endpoint with MongoDB connection test
 const { connectToDatabase } = require('./mongo');
 
-module.exports = async (req, res) => {
+async function handler(req, res) {
   console.log('Ping received at:', new Date().toISOString());
   
   // Set CORS headers
@@ -52,4 +52,7 @@ module.exports = async (req, res) => {
   }
   
   res.status(200).json(response);
-} 
+}
+
+// Export the handler function for Vercel serverless functions
+module.exports = handler; 
