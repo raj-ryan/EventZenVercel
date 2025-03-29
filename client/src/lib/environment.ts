@@ -13,10 +13,16 @@ const getDomain = () => {
   return '';
 };
 
+// Log the environment for debugging
+console.log("Environment:", isProd ? "Production" : "Development");
+
 // API URL will be different depending on environment
 export const API_URL = isProd 
   ? `${getDomain()}/api` // Production API URL (absolute path)
   : '/api'; // Development API URL
+
+// Log the API URL for debugging
+console.log("API URL:", API_URL);
 
 // Export other environment variables as needed
 export const getApiUrl = (path: string | unknown[]): string => {
@@ -44,13 +50,17 @@ export const getApiUrl = (path: string | unknown[]): string => {
   
   // Handle client-side routes for events and venues to point to API
   if (pathStr.startsWith('/events/') && !pathStr.includes('edit')) {
-    return `${API_URL}/events${pathStr.substring(7)}`;
+    const eventId = pathStr.substring(8); // Remove '/events/'
+    return `${API_URL}/events/${eventId}`;
   }
   
   if (pathStr.startsWith('/venues/') && !pathStr.includes('edit')) {
-    return `${API_URL}/venues${pathStr.substring(7)}`;
+    const venueId = pathStr.substring(8); // Remove '/venues/'
+    return `${API_URL}/venues/${venueId}`;
   }
   
   // Otherwise, concatenate the API URL and path
-  return `${API_URL}${pathStr.startsWith('/') ? pathStr : `/${pathStr}`}`;
+  const finalUrl = `${API_URL}${pathStr.startsWith('/') ? pathStr : `/${pathStr}`}`;
+  console.log("API Request URL:", finalUrl);
+  return finalUrl;
 };

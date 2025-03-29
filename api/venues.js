@@ -2,20 +2,15 @@
 import { getDb } from '../server/db';
 import { venues } from '../shared/schema';
 import { asc, eq } from 'drizzle-orm';
-import cors from 'cors';
-import express from 'express';
 
-// Create Express instance for this endpoint
-const app = express();
-app.use(cors({
-  origin: '*',
-  methods: 'GET,POST,OPTIONS'
-}));
-app.use(express.json());
-
-// Handler for venue routes
-const handler = async (req, res) => {
-  console.log("Venues API called with method:", req.method, "Path:", req.url);
+// Direct serverless handler for Vercel
+export default async function handler(req, res) {
+  console.log("Venues API called with method:", req.method, "URL:", req.url);
+  
+  // Set CORS headers for all responses
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -52,8 +47,8 @@ const handler = async (req, res) => {
       // Get all venues
       console.log("Fetching all venues...");
       
-      // Limit and offset
-      const limit = req.query.limit ? parseInt(req.query.limit) : 10;
+      // Limit and offset with more generous defaults
+      const limit = req.query.limit ? parseInt(req.query.limit) : 50;
       const offset = req.query.offset ? parseInt(req.query.offset) : 0;
       
       const venuesList = await dbInstance
@@ -70,12 +65,8 @@ const handler = async (req, res) => {
     console.error("Error with venues:", error);
     return res.status(500).json({
       message: "Error processing venue request",
-      details: error.message
+      details: error.message,
+      stack: process.env.NODE_ENV === 'production' ? undefined : error.stack
     });
   }
-};
-
-app.get('/api/venues', handler);
-app.get('/api/venues/:id', handler);
-
-export default app; 
+} 
