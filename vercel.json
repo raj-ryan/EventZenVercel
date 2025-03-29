@@ -4,13 +4,6 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "installCommand": "npm install",
-  "functions": {
-    "api/*.js": {
-      "memory": 1024,
-      "maxDuration": 10,
-      "runtime": "@vercel/node@latest"
-    }
-  },
   "routes": [
     { "src": "/api/ping", "dest": "/api/ping.js" },
     { "src": "/api/events", "dest": "/api/events.js" },
