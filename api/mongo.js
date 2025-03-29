@@ -4,7 +4,7 @@ const venues = require('./data/venues');
 const events = require('./data/events');
 
 // MongoDB Connection URI from environment variable
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://eventzen:eventzen123@cluster0.g7xsb.mongodb.net/eventzen?retryWrites=true&w=majority';
+const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = 'eventzen';
 
 // Global variables for caching the database connection
@@ -28,6 +28,10 @@ async function connectToDatabase() {
     return connectionPromise;
   }
 
+  if (!MONGODB_URI) {
+    throw new Error('MONGODB_URI is not defined in environment variables');
+  }
+
   console.log("Establishing new MongoDB connection");
 
   try {
@@ -43,7 +47,10 @@ async function connectToDatabase() {
         });
 
         await client.connect();
+        console.log("Connected to MongoDB successfully");
+
         const db = client.db(DB_NAME);
+        console.log("Selected database:", DB_NAME);
 
         // Initialize sample data if needed
         await initializeData(db);
@@ -99,6 +106,7 @@ async function initializeData(db) {
     }
   } catch (error) {
     console.error('Error initializing data:', error);
+    throw error; // Propagate the error
   }
 }
 

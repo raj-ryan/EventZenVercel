@@ -14,23 +14,34 @@ module.exports = async (req, res) => {
   }
 
   try {
+    console.log("Connecting to MongoDB...");
     // Connect to MongoDB
     const { db } = await connectToDatabase();
+    console.log("Connected to MongoDB successfully");
+
     const eventsCollection = db.collection('events');
     
     // Handle GET request (list events)
     if (req.method === 'GET') {
       console.log("Fetching events from MongoDB...");
       
-      // Simple query to get events ordered by date
-      const events = await eventsCollection
-        .find({})
-        .sort({ date: -1 })
-        .limit(50)
-        .toArray();
-      
-      console.log(`Retrieved ${events.length} events from MongoDB`);
-      return res.status(200).json(events);
+      try {
+        // Simple query to get events ordered by date
+        const events = await eventsCollection
+          .find({})
+          .sort({ date: -1 })
+          .limit(50)
+          .toArray();
+        
+        console.log(`Retrieved ${events.length} events from MongoDB`);
+        return res.status(200).json(events);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+        return res.status(500).json({ 
+          error: 'Failed to fetch events',
+          details: error.message
+        });
+      }
     }
     
     // Handle POST request (create event)
@@ -41,15 +52,24 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'Missing required event fields' });
       }
       
-      // Set timestamps
-      eventData.createdAt = new Date();
-      eventData.updatedAt = new Date();
-      
-      // Insert new event
-      const result = await eventsCollection.insertOne(eventData);
-      const newEvent = await eventsCollection.findOne({ _id: result.insertedId });
-      
-      return res.status(201).json(newEvent);
+      try {
+        // Set timestamps
+        eventData.createdAt = new Date();
+        eventData.updatedAt = new Date();
+        
+        // Insert new event
+        const result = await eventsCollection.insertOne(eventData);
+        const newEvent = await eventsCollection.findOne({ _id: result.insertedId });
+        
+        console.log("Created new event:", newEvent);
+        return res.status(201).json(newEvent);
+      } catch (error) {
+        console.error("Error creating event:", error);
+        return res.status(500).json({ 
+          error: 'Failed to create event',
+          details: error.message
+        });
+      }
     }
     
     // Handle other methods
@@ -60,7 +80,8 @@ module.exports = async (req, res) => {
     console.error("Error processing MongoDB request:", error);
     return res.status(500).json({ 
       error: 'Database operation failed', 
-      message: error.message
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }; 

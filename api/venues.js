@@ -14,23 +14,34 @@ module.exports = async (req, res) => {
   }
 
   try {
+    console.log("Connecting to MongoDB...");
     // Connect to MongoDB
     const { db } = await connectToDatabase();
+    console.log("Connected to MongoDB successfully");
+
     const venuesCollection = db.collection('venues');
     
     // Handle GET request (list venues)
     if (req.method === 'GET') {
       console.log("Fetching venues from MongoDB...");
       
-      // Simple query to get venues ordered by name
-      const venues = await venuesCollection
-        .find({})
-        .sort({ name: 1 })
-        .limit(50)
-        .toArray();
-      
-      console.log(`Retrieved ${venues.length} venues from MongoDB`);
-      return res.status(200).json(venues);
+      try {
+        // Simple query to get venues ordered by name
+        const venues = await venuesCollection
+          .find({})
+          .sort({ name: 1 })
+          .limit(50)
+          .toArray();
+        
+        console.log(`Retrieved ${venues.length} venues from MongoDB`);
+        return res.status(200).json(venues);
+      } catch (error) {
+        console.error("Error fetching venues:", error);
+        return res.status(500).json({ 
+          error: 'Failed to fetch venues',
+          details: error.message
+        });
+      }
     }
     
     // Handle POST request (create venue)
@@ -41,15 +52,24 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'Missing required venue fields' });
       }
       
-      // Set timestamps
-      venueData.createdAt = new Date();
-      venueData.updatedAt = new Date();
-      
-      // Insert new venue
-      const result = await venuesCollection.insertOne(venueData);
-      const newVenue = await venuesCollection.findOne({ _id: result.insertedId });
-      
-      return res.status(201).json(newVenue);
+      try {
+        // Set timestamps
+        venueData.createdAt = new Date();
+        venueData.updatedAt = new Date();
+        
+        // Insert new venue
+        const result = await venuesCollection.insertOne(venueData);
+        const newVenue = await venuesCollection.findOne({ _id: result.insertedId });
+        
+        console.log("Created new venue:", newVenue);
+        return res.status(201).json(newVenue);
+      } catch (error) {
+        console.error("Error creating venue:", error);
+        return res.status(500).json({ 
+          error: 'Failed to create venue',
+          details: error.message
+        });
+      }
     }
     
     // Handle other methods
@@ -60,7 +80,8 @@ module.exports = async (req, res) => {
     console.error("Error processing MongoDB request:", error);
     return res.status(500).json({ 
       error: 'Database operation failed', 
-      message: error.message
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }; 
