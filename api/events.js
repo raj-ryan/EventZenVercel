@@ -1,26 +1,6 @@
-// Standalone Vercel serverless function for events
-const { Pool } = require('@neondatabase/serverless');
-const { drizzle } = require('drizzle-orm/neon-serverless');
-
-// Define schema inline to avoid imports
-const events = {
-  id: { name: 'id' },
-  name: { name: 'name' },
-  description: { name: 'description' },
-  date: { name: 'date' },
-  endDate: { name: 'end_date' },
-  venueId: { name: 'venue_id' },
-  capacity: { name: 'capacity' },
-  price: { name: 'price' },
-  category: { name: 'category' },
-  image: { name: 'image' },
-  createdBy: { name: 'created_by' },
-  status: { name: 'status' },
-  isPublished: { name: 'is_published' },
-  liveStatus: { name: 'live_status' },
-  createdAt: { name: 'created_at' },
-  updatedAt: { name: 'updated_at' }
-};
+// Simple static data handler for events
+const fs = require('fs');
+const path = require('path');
 
 module.exports = async (req, res) => {
   console.log("Events API called:", req.url);
@@ -41,37 +21,18 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // Get database connection string from environment variable
-    const connectionString = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
+    // Path to the static JSON file
+    const dataPath = path.join(process.cwd(), 'api', 'data', 'events.json');
     
-    if (!connectionString) {
-      console.error("No database connection string available");
-      return res.status(500).json({ error: 'Database configuration missing' });
-    }
+    console.log("Reading static events data...");
     
-    console.log("Connecting to database...");
+    // Read the file
+    const fileContents = fs.readFileSync(dataPath, 'utf8');
+    const events = JSON.parse(fileContents);
     
-    // Create a new pool for this request
-    const pool = new Pool({ connectionString });
+    console.log(`Successfully retrieved ${events.length} events from static data`);
     
-    // Create a Drizzle ORM instance
-    const db = drizzle(pool);
-    
-    console.log("Fetching events from database using direct SQL...");
-    
-    // Execute raw SQL query to bypass any ORM issues
-    const result = await pool.query(`
-      SELECT * FROM events 
-      ORDER BY date DESC
-      LIMIT 50
-    `);
-    
-    // Close the pool after the query
-    await pool.end();
-    
-    console.log(`Successfully retrieved ${result.rows.length} events`);
-    
-    return res.status(200).json(result.rows);
+    return res.status(200).json(events);
   } catch (error) {
     console.error("Failed to fetch events:", error);
     return res.status(500).json({ 
