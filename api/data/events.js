@@ -1,5 +1,5 @@
 // Sample event data for MongoDB
-module.exports = [
+export default [
   {
     id: 1,
     name: "Tech Innovation Summit",

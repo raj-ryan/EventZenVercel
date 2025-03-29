@@ -1,7 +1,7 @@
-const { connectToDatabase } = require('./mongo.js');
+import { connectToDatabase } from './mongo.js';
 
 // Export default function for Vercel serverless function
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // Set JSON content type header
   res.setHeader('Content-Type', 'application/json');
   
