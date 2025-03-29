@@ -61,8 +61,24 @@ export default function BookEventModal({ isOpen, onClose, event }: BookEventModa
       };
       
       console.log("Submitting booking with data:", finalBookingData);
-      const response = await apiRequest('POST', '/bookings', finalBookingData);
-      return response;
+      
+      // Use direct API path to ensure server routing
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(finalBookingData)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Booking error response:', errorText);
+        throw new Error(`Booking failed: ${response.status} ${errorText}`);
+      }
+      
+      return await response.json();
     },
     onSuccess: (data) => {
       // Invalidate the relevant queries

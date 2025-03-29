@@ -89,9 +89,27 @@ export default function EventDetail() {
     queryFn: async () => {
       console.log(`Fetching event with ID: ${params?.id}`);
       try {
-        const response = await apiRequest('GET', `/events/${params?.id}`);
-        console.log('Event data received:', response);
-        return response;
+        // Use direct fetch to ensure proper API routing
+        const response = await fetch(`/api/events/${params?.id}`, {
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch event: ${response.status}`);
+        }
+        
+        // Check content type
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.error('Non-JSON response received:', contentType);
+          throw new Error('Server returned non-JSON response');
+        }
+        
+        const data = await response.json();
+        console.log('Event data received:', data);
+        return data;
       } catch (error) {
         console.error('Error fetching event:', error);
         throw error;
@@ -105,9 +123,27 @@ export default function EventDetail() {
     queryKey: ['/venues', event?.venueId],
     queryFn: async () => {
       try {
-        const response = await apiRequest('GET', `/venues/${event?.venueId}`);
-        console.log('Venue data received:', response);
-        return response;
+        // Use direct fetch to ensure proper API routing
+        const response = await fetch(`/api/venues/${event?.venueId}`, {
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch venue: ${response.status}`);
+        }
+        
+        // Check content type
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.error('Non-JSON response received:', contentType);
+          throw new Error('Server returned non-JSON response');
+        }
+        
+        const data = await response.json();
+        console.log('Venue data received:', data);
+        return data;
       } catch (error) {
         console.error('Error fetching venue:', error);
         throw error;

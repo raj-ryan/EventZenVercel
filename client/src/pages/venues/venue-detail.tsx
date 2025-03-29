@@ -43,9 +43,27 @@ export default function VenueDetail() {
     queryFn: async () => {
       console.log('Fetching venue with ID:', params?.id);
       try {
-        const response = await apiRequest('GET', `/venues/${params?.id}`);
-        console.log('Venue data received:', response);
-        return response;
+        // Use direct fetch to ensure proper API routing
+        const response = await fetch(`/api/venues/${params?.id}`, {
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch venue: ${response.status}`);
+        }
+        
+        // Check content type
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.error('Non-JSON response received:', contentType);
+          throw new Error('Server returned non-JSON response');
+        }
+        
+        const data = await response.json();
+        console.log('Venue data received:', data);
+        return data;
       } catch (error) {
         console.error('Error fetching venue:', error);
         throw error;

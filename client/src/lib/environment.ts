@@ -43,20 +43,23 @@ export const getApiUrl = (path: QueryKey | string): string => {
   console.log(`Converting path: ${pathStr}`);
   
   // Remove any duplicate /api/ prefixes
-  const cleanPath = pathStr.replace(/^\/api\//, '/');
+  let cleanPath = pathStr.replace(/^\/api\//, '/');
   
-  // Handle client-side routes for events and venues to point to API
-  if (cleanPath.startsWith('/events/') && !cleanPath.includes('edit')) {
-    const eventId = cleanPath.substring(8); // Remove '/events/'
-    const url = `${getDomain()}/api/events/${eventId}`;
-    console.log(`Converted events path: ${cleanPath} -> ${url}`);
+  // Also remove /events/ or /venues/ prefixes for detail routes
+  const isEventDetail = cleanPath.match(/^\/events\/(\d+)$/);
+  const isVenueDetail = cleanPath.match(/^\/venues\/(\d+)$/);
+  
+  if (isEventDetail) {
+    cleanPath = `/api/events/${isEventDetail[1]}`;
+    const url = `${getDomain()}${cleanPath}`;
+    console.log(`Direct event detail path: ${cleanPath} -> ${url}`);
     return url;
   }
   
-  if (cleanPath.startsWith('/venues/') && !cleanPath.includes('edit')) {
-    const venueId = cleanPath.substring(8); // Remove '/venues/'
-    const url = `${getDomain()}/api/venues/${venueId}`;
-    console.log(`Converted venues path: ${cleanPath} -> ${url}`);
+  if (isVenueDetail) {
+    cleanPath = `/api/venues/${isVenueDetail[1]}`;
+    const url = `${getDomain()}${cleanPath}`;
+    console.log(`Direct venue detail path: ${cleanPath} -> ${url}`);
     return url;
   }
   

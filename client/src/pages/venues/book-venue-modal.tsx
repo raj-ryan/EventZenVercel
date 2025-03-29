@@ -112,8 +112,24 @@ export default function BookVenueModal({ venue, isOpen, onClose }: BookVenueModa
       };
       
       console.log('Venue booking data being sent:', bookingData);
-      const response = await apiRequest('POST', '/bookings', bookingData);
-      return response;
+      
+      // Use direct API path to ensure server routing
+      const response = await fetch('/api/venue-bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(bookingData)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Venue booking error response:', errorText);
+        throw new Error(`Venue booking failed: ${response.status} ${errorText}`);
+      }
+      
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/bookings'] });
