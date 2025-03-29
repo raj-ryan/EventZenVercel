@@ -23,28 +23,47 @@ async function throwIfResNotOk(res: Response) {
 
 export async function apiRequest(
   method: string,
-  url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
-  // Convert API URL if needed
-  const apiUrl = getApiUrl(url);
-  
-  console.log(`Making ${method} request to ${apiUrl}`);
-  
+  endpoint: string,
+  data?: any,
+  customHeaders?: Record<string, string>
+) {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}/api${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+
+  console.log('Making API request to:', url);
+
   try {
-    const res = await fetch(apiUrl, {
-      method,
-      headers: data ? { "Content-Type": "application/json" } : {},
+    const response = await fetch(url, {
+      method: method.toUpperCase(),
+      headers: {
+        'Content-Type': 'application/json',
+        ...customHeaders,
+      },
       body: data ? JSON.stringify(data) : undefined,
-      credentials: "include",
     });
 
-    console.log(`Response status from ${apiUrl}: ${res.status}`);
-    
-    await throwIfResNotOk(res);
-    return res;
+    // Log response status and headers
+    console.log('API Response Status:', response.status);
+    console.log('API Response Headers:', Object.fromEntries(response.headers.entries()));
+
+    // Handle non-200 responses
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('API Error:', errorData);
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    // Try to parse JSON response
+    try {
+      const jsonData = await response.json();
+      console.log('API Response Data:', jsonData);
+      return jsonData;
+    } catch (error) {
+      console.error('Error parsing JSON response:', error);
+      throw new Error('Invalid JSON response from server');
+    }
   } catch (error) {
-    console.error(`API request failed to ${apiUrl}:`, error);
+    console.error('API Request Error:', error);
     throw error;
   }
 }
@@ -88,11 +107,17 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: 1,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 3,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
     mutations: {
       retry: 1,
     },
   },
 });
+
+// Helper function to invalidate queries
+export function invalidateQueries(queryKey: string | readonly unknown[]) {
+  return queryClient.invalidateQueries({ queryKey: queryKey as readonly unknown[] });
+}

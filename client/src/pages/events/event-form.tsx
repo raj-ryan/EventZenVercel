@@ -223,10 +223,34 @@ export default function EventForm() {
       if (isEditMode) {
         await updateEventMutation.mutateAsync(values);
       } else {
-        await createEventMutation.mutateAsync(values);
+        // Add console logs for debugging
+        console.log('Submitting event data:', values);
+        const result = await createEventMutation.mutateAsync(values);
+        console.log('Event creation result:', result);
+        
+        // Only navigate after successful creation
+        if (result) {
+          // Invalidate and refetch events query
+          await queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+          
+          toast({
+            title: 'Event Created',
+            description: 'Your event has been successfully created.',
+          });
+          
+          // Navigate after successful creation
+          setTimeout(() => {
+            navigate('/events');
+          }, 100);
+        }
       }
     } catch (error) {
       console.error('Form submission error:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Could not create/update event',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
