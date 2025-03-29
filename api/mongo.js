@@ -20,8 +20,16 @@ let connectionPromise = null;
 export async function connectToDatabase() {
   // If we already have a cached connection, use it
   if (cachedClient && cachedDb) {
-    console.log("Using cached database connection");
-    return { client: cachedClient, db: cachedDb };
+    try {
+      // Verify the connection is still alive
+      await cachedDb.command({ ping: 1 });
+      console.log("Using cached database connection");
+      return { client: cachedClient, db: cachedDb };
+    } catch (error) {
+      console.log("Cached connection is stale, creating new connection");
+      cachedClient = null;
+      cachedDb = null;
+    }
   }
 
   // If a connection is in progress, wait for it
@@ -42,16 +50,24 @@ export async function connectToDatabase() {
       try {
         // Connect to the MongoDB database with improved options
         const client = new MongoClient(MONGODB_URI, {
-          connectTimeoutMS: 10000,
-          socketTimeoutMS: 45000,
-          serverSelectionTimeoutMS: 10000,
+          connectTimeoutMS: 15000,
+          socketTimeoutMS: 60000,
+          serverSelectionTimeoutMS: 15000,
           retryWrites: true,
           retryReads: true,
           maxPoolSize: 1,
           minPoolSize: 1,
           maxIdleTimeMS: 120000,
           ssl: true,
-          tls: true
+          tls: true,
+          tlsAllowInvalidCertificates: true,
+          useNewUrlParser: true,
+          useUnifiedTopology: true,
+          serverApi: {
+            version: '1',
+            strict: true,
+            deprecationErrors: true
+          }
         });
 
         await client.connect();
@@ -59,6 +75,10 @@ export async function connectToDatabase() {
 
         const db = client.db(DB_NAME);
         console.log("Selected database:", DB_NAME);
+
+        // Test the connection
+        await db.command({ ping: 1 });
+        console.log("MongoDB connection test successful");
 
         // Initialize sample data if needed
         await initializeData(db);
@@ -81,6 +101,9 @@ export async function connectToDatabase() {
     console.error("Error in connectToDatabase:", error);
     connectionPromise = null;
     throw error;
+  } finally {
+    // Clear the connection promise
+    connectionPromise = null;
   }
 }
 

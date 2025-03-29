@@ -1,6 +1,6 @@
 import { MongoClient } from 'mongodb';
 
-const MONGODB_URI = "mongodb+srv://rajaryan2021:BUirrO3n0pQdfmg4@eventzen.9whhscq.mongodb.net/eventzen?retryWrites=true&w=majority&appName=EventZen";
+const MONGODB_URI = "mongodb+srv://rajaryan2021:Chiku%4002215@eventzen.9whhscq.mongodb.net/eventzen?retryWrites=true&w=majority&authSource=admin";
 const DB_NAME = 'eventzen';
 
 async function testConnection() {
@@ -8,8 +8,17 @@ async function testConnection() {
   
   try {
     const client = new MongoClient(MONGODB_URI, {
-      connectTimeoutMS: 5000,
-      socketTimeoutMS: 30000,
+      connectTimeoutMS: 15000,
+      socketTimeoutMS: 60000,
+      serverSelectionTimeoutMS: 15000,
+      retryWrites: true,
+      retryReads: true,
+      maxPoolSize: 1,
+      minPoolSize: 1,
+      maxIdleTimeMS: 120000,
+      ssl: true,
+      tls: true,
+      authSource: 'admin'
     });
 
     await client.connect();
@@ -18,24 +27,25 @@ async function testConnection() {
     const db = client.db(DB_NAME);
     
     // Test venues collection
-    const venues = await db.collection('venues').countDocuments();
-    console.log(`Found ${venues} venues`);
+    const venuesCount = await db.collection('venues').countDocuments();
+    console.log(`Found ${venuesCount} venues`);
     
     // Test events collection
-    const events = await db.collection('events').countDocuments();
-    console.log(`Found ${events} events`);
-
+    const eventsCount = await db.collection('events').countDocuments();
+    console.log(`Found ${eventsCount} events`);
+    
     // List all collections
     const collections = await db.listCollections().toArray();
-    console.log('\nAvailable collections:');
-    collections.forEach(collection => {
+    console.log('Collections:');
+    for (const collection of collections) {
       console.log(`- ${collection.name}`);
-    });
+    }
 
     await client.close();
     console.log('\nConnection closed successfully');
   } catch (error) {
     console.error('Error connecting to MongoDB:', error);
+    process.exit(1);
   }
 }
 

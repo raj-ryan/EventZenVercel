@@ -1,7 +1,9 @@
 {
   "version": 2,
   "env": {
-    "MONGODB_URI": "mongodb+srv://rajaryan2021:BUirrO3n0pQdfmg4@eventzen.9whhscq.mongodb.net/eventzen?retryWrites=true&w=majority&appName=EventZen"
+    "MONGODB_URI": "mongodb+srv://rajaryan2021:Chiku%4002215@eventzen.9whhscq.mongodb.net/eventzen?retryWrites=true&w=majority&authSource=admin",
+    "NODE_ENV": "production",
+    "NODE_VERSION": "18.x"
   },
   "functions": {
     "api/*.js": {
@@ -15,7 +17,13 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "api/$1"
+      "dest": "api/$1",
+      "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS"
+      }
     },
     {
       "src": "^/assets/(.*)",
