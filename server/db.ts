@@ -3,28 +3,27 @@ import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
 import * as schema from "@shared/schema";
 import * as dotenv from 'dotenv';
+import { sql } from 'drizzle-orm';
 
 // Load environment variables
 dotenv.config();
 
-// Global connection pool and db instance for connection reuse
-let _pool: Pool | null = null;
-let _db: any = null;
+// For debugging
+console.log("DB connection setup starting...");
+console.log("Node environment:", process.env.NODE_ENV);
 
-// Check for DATABASE_URL
-if (!process.env.DATABASE_URL) {
-  console.error("DATABASE_URL is missing! This will cause database connection failures.");
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
+// Direct connection for serverless environment
+let connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  console.error("⚠️ DATABASE_URL is not set in environment variables");
+  // For development fallback
+  connectionString = "postgresql://localhost:5432/eventzen";
 }
 
-// Check if DATABASE_URL looks valid
-const dbUrlValid = process.env.DATABASE_URL.startsWith('postgresql://');
-console.log(`Database URL format ${dbUrlValid ? 'appears valid' : 'is INVALID!'}`);
+console.log("Using database connection string:", connectionString.replace(/:.+@/, ':*****@'));
 
 // In serverless environments, we don't use WebSockets
-// This prevents issues with serverless functions
 if (process.env.NODE_ENV !== 'production') {
   console.log("Development environment: Using WebSocket for Neon");
   neonConfig.webSocketConstructor = ws;
@@ -33,55 +32,33 @@ if (process.env.NODE_ENV !== 'production') {
   // In production we use HTTP instead of WebSockets
 }
 
-// Get or create connection pool with connection pooling for serverless 
-export function getPool(): Pool {
-  try {
-    if (!_pool) {
-      console.log("Creating new database pool");
-      _pool = new Pool({ 
-        connectionString: process.env.DATABASE_URL,
-        max: 10, // Maximum number of clients the pool should contain
-        idleTimeoutMillis: 30000, // How long a client is allowed to remain idle before being closed
-        connectionTimeoutMillis: 10000, // Maximum time to wait for connection
-      });
-      
-      // Test the connection immediately to validate
-      _pool.connect()
-        .then(() => console.log("✅ Database connection test successful"))
-        .catch(err => console.error("❌ Database connection test failed:", err.message));
-    }
-    return _pool;
-  } catch (error) {
-    console.error("Error creating pool:", error);
-    throw error;
-  }
+// Create a single pool instance
+const pool = new Pool({ 
+  connectionString,
+  max: 10
+});
+
+// Create a single db instance
+const db = drizzle(pool, { schema });
+
+// Get pool function (returns existing pool)
+export function getPool() {
+  return pool;
 }
 
-// Get or create Drizzle ORM instance
+// Get db function (returns existing db)
 export function getDb() {
-  try {
-    if (!_db) {
-      const pool = getPool();
-      console.log("Initializing Drizzle ORM");
-      _db = drizzle({ client: pool, schema });
-    }
-    return _db;
-  } catch (error) {
-    console.error("Error creating DB instance:", error);
-    throw error;
-  }
+  return db;
 }
 
-// Export pool and db for compatibility with existing code
-export const pool = getPool();
-export const db = getDb();
+// Export for direct use
+export { pool, db };
 
-// Add some initial debugging - try a simple query to verify the connection
-try {
-  console.log("Running test query to verify database connection...");
-  db.select({ result: schema.users.id }).limit(1).execute()
-    .then((result: any) => console.log("✅ Test query successful:", result))
-    .catch((err: Error) => console.error("❌ Test query failed:", err.message));
-} catch (error) {
-  console.error("Failed to run test query:", error);
+// Run a test query to verify connection (only in non-production)
+if (process.env.NODE_ENV !== 'production') {
+  console.log("Testing database connection...");
+  db.select({ now: sql`NOW()` })
+    .execute()
+    .then(result => console.log("✅ Database connection test successful:", result))
+    .catch(err => console.error("❌ Database connection test failed:", err));
 }

@@ -1,45 +1,38 @@
-// Simple Vercel serverless function for events
-import { getDb } from '../server/db';
-import { events } from '../shared/schema';
-import { desc } from 'drizzle-orm';
+// Simplified events API for Vercel
+const { db } = require('../server/db');
+const { events } = require('../shared/schema');
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
-  // Handle preflight
+  // Handle OPTIONS request (preflight)
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
-  
+
   // Only allow GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    console.log("Fetching events from database...");
+    console.log("Fetching events from database");
     
-    // Use direct query - no DB connection pooling here
-    const dbInstance = getDb();
+    // Basic query with minimal fields
+    const eventsList = await db.query.events.findMany({
+      limit: 50
+    });
     
-    // Get all events
-    const eventsList = await dbInstance
-      .select()
-      .from(events)
-      .limit(50);
-    
-    console.log(`Fetched ${eventsList.length} events`);
-    
-    // Return events as JSON
+    console.log(`Successfully retrieved ${eventsList.length} events`);
     return res.status(200).json(eventsList);
   } catch (error) {
-    console.error("Error fetching events:", error);
+    console.error("Failed to fetch events:", error);
     return res.status(500).json({ 
-      error: 'Failed to fetch events',
-      message: error.message 
+      error: 'Failed to fetch events', 
+      message: error.message
     });
   }
 } 
