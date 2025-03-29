@@ -46,21 +46,44 @@ export async function apiRequest(
     console.log('API Response Status:', response.status);
     console.log('API Response Headers:', Object.fromEntries(response.headers.entries()));
 
+    // Check content type
+    const contentType = response.headers.get('content-type');
+    const isJson = contentType && contentType.includes('application/json');
+
     // Handle non-200 responses
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('API Error:', errorData);
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      
+      try {
+        if (isJson) {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } else {
+          const text = await response.text();
+          console.error('Non-JSON error response:', text);
+          errorMessage = `Server error: ${text.slice(0, 200)}...`;
+        }
+      } catch (parseError) {
+        console.error('Error parsing error response:', parseError);
+      }
+      
+      throw new Error(errorMessage);
     }
 
-    // Try to parse JSON response
-    try {
-      const jsonData = await response.json();
-      console.log('API Response Data:', jsonData);
-      return jsonData;
-    } catch (error) {
-      console.error('Error parsing JSON response:', error);
-      throw new Error('Invalid JSON response from server');
+    // Handle successful response
+    if (isJson) {
+      try {
+        const jsonData = await response.json();
+        console.log('API Response Data:', jsonData);
+        return jsonData;
+      } catch (error) {
+        console.error('Error parsing JSON response:', error);
+        throw new Error('Invalid JSON response from server');
+      }
+    } else {
+      const text = await response.text();
+      console.error('Unexpected non-JSON response:', text);
+      throw new Error('Server returned non-JSON response');
     }
   } catch (error) {
     console.error('API Request Error:', error);

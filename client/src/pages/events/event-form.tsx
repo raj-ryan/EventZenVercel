@@ -135,37 +135,26 @@ export default function EventForm() {
     }
   }, [eventData, form]);
   
-  // Fetch venues for the dropdown from the API
-  useEffect(() => {
-    async function fetchVenues() {
+  // Fetch venues using React Query instead of useEffect
+  const { data: venues = [], isLoading: isVenuesLoading, error: venuesError } = useQuery({
+    queryKey: ['/api/venues'],
+    queryFn: async () => {
       try {
         const response = await apiRequest('GET', '/api/venues');
-        const venuesData = await response.json();
-        
-        // Only set venues data if we received an array
-        if (Array.isArray(venuesData)) {
-          console.log('Fetched venues:', venuesData);
-          setVenues(venuesData);
-        } else {
-          console.error('Invalid venues data format:', venuesData);
-          toast({
-            title: 'Error',
-            description: 'Could not load venues data. Please try again.',
-            variant: 'destructive',
-          });
-        }
+        console.log('Fetched venues:', response);
+        return Array.isArray(response) ? response : [];
       } catch (error) {
         console.error('Error fetching venues:', error);
         toast({
           title: 'Error',
-          description: 'Failed to load venues. Please try again.',
+          description: 'Could not load venues. Please try again.',
           variant: 'destructive',
         });
+        throw error;
       }
-    }
-    
-    fetchVenues();
-  }, [toast]);
+    },
+    retry: 2,
+  });
   
   // Create event mutation
   const createEventMutation = useMutation({
@@ -435,20 +424,39 @@ export default function EventForm() {
                   <Select
                     onValueChange={(value) => field.onChange(parseInt(value))}
                     defaultValue={field.value?.toString()}
+                    disabled={isVenuesLoading}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a venue" />
+                        <SelectValue placeholder={isVenuesLoading ? "Loading venues..." : "Select a venue"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {venues.map((venue: Venue) => (
-                        <SelectItem key={venue.id} value={venue.id.toString()}>
-                          {venue.name}
+                      {isVenuesLoading ? (
+                        <SelectItem value="" disabled>
+                          <div className="flex items-center">
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Loading venues...
+                          </div>
                         </SelectItem>
-                      ))}
+                      ) : venues.length > 0 ? (
+                        venues.map((venue) => (
+                          <SelectItem key={venue.id} value={venue.id.toString()}>
+                            {venue.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="" disabled>
+                          No venues available
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
+                  {venuesError && (
+                    <div className="text-red-500 text-sm mt-1">
+                      Failed to load venues. Please try refreshing the page.
+                    </div>
+                  )}
                   <FormDescription>
                     Choose where the event will be held.
                   </FormDescription>

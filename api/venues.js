@@ -30,8 +30,19 @@ export default async function handler(req, res) {
           .sort({ name: 1 })
           .toArray();
         
-        console.log(`Retrieved ${venues.length} venues`);
-        return res.status(200).json(venues);
+        // Ensure each venue has required fields
+        const processedVenues = venues.map(venue => ({
+          id: venue.id || Date.now(),
+          name: venue.name || 'Unnamed Venue',
+          location: venue.location || venue.address || 'No location specified',
+          capacity: venue.capacity || 100,
+          status: venue.status || 'active',
+          createdAt: venue.createdAt || new Date(),
+          updatedAt: venue.updatedAt || new Date()
+        }));
+        
+        console.log(`Retrieved ${processedVenues.length} venues`);
+        return res.status(200).json(processedVenues);
       } catch (error) {
         console.error("Error fetching venues:", error);
         return res.status(500).json({ 
@@ -53,8 +64,19 @@ export default async function handler(req, res) {
           return res.status(404).json({ error: 'Venue not found' });
         }
         
-        console.log("Retrieved venue:", venue);
-        return res.status(200).json(venue);
+        // Process venue data
+        const processedVenue = {
+          id: venue.id || venueId,
+          name: venue.name || 'Unnamed Venue',
+          location: venue.location || venue.address || 'No location specified',
+          capacity: venue.capacity || 100,
+          status: venue.status || 'active',
+          createdAt: venue.createdAt || new Date(),
+          updatedAt: venue.updatedAt || new Date()
+        };
+        
+        console.log("Retrieved venue:", processedVenue);
+        return res.status(200).json(processedVenue);
       } catch (error) {
         console.error("Error fetching venue:", error);
         return res.status(500).json({ 
@@ -79,9 +101,7 @@ export default async function handler(req, res) {
           ...venueData,
           id: Date.now(), // Generate a numeric ID
           capacity: parseInt(venueData.capacity) || 100,
-          createdBy: parseInt(venueData.createdBy) || 1,
           status: venueData.status || 'active',
-          isPublished: venueData.isPublished !== undefined ? venueData.isPublished : true,
           createdAt: new Date(),
           updatedAt: new Date()
         };

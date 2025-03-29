@@ -8,47 +8,28 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
-  // Handle OPTIONS request (preflight)
+  // Handle preflight request
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
-  
-  const response = {
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    message: 'API is working properly!',
-    vercel: true,
-    database: false,
-    type: 'MongoDB'
-  };
-  
-  // Test MongoDB connection
-  try {
-    const { client, db } = await connectToDatabase();
-    
-    // Run a simple command to verify the connection
-    const result = await db.command({ ping: 1 });
-    
-    if (result.ok === 1) {
-      response.database = true;
-      response.databaseTimestamp = new Date().toISOString();
-      
-      // Get collection counts
-      const venues = await db.collection('venues').countDocuments();
-      const events = await db.collection('events').countDocuments();
-      
-      response.collections = {
-        venues,
-        events
-      };
-      
-      console.log('MongoDB connection test successful');
-    }
-  } catch (error) {
-    console.error('MongoDB connection test failed:', error);
-    response.databaseError = error.message;
+
+  // Only allow GET requests
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
-  
-  res.status(200).json(response);
+
+  try {
+    // Return a simple response
+    return res.status(200).json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      message: 'API is running'
+    });
+  } catch (error) {
+    console.error('Ping error:', error);
+    return res.status(500).json({
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
 } 
