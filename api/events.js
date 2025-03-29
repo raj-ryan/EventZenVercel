@@ -1,8 +1,28 @@
-// Simplified events API for Vercel
-const { db } = require('../server/db');
-const { events } = require('../shared/schema');
+// Standalone Vercel serverless function for events
+import { Pool } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
 
-module.exports = async (req, res) => {
+// Define schema inline to avoid imports
+const events = {
+  id: { name: 'id' },
+  name: { name: 'name' },
+  description: { name: 'description' },
+  date: { name: 'date' },
+  endDate: { name: 'end_date' },
+  venueId: { name: 'venue_id' },
+  capacity: { name: 'capacity' },
+  price: { name: 'price' },
+  category: { name: 'category' },
+  image: { name: 'image' },
+  createdBy: { name: 'created_by' },
+  status: { name: 'status' },
+  isPublished: { name: 'is_published' },
+  liveStatus: { name: 'live_status' },
+  createdAt: { name: 'created_at' },
+  updatedAt: { name: 'updated_at' }
+};
+
+export default async function handler(req, res) {
   console.log("Events API called:", req.url);
   
   // Set CORS headers
@@ -21,24 +41,37 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // Verify we have a database connection first
-    if (!db || !db.query || !db.query.events) {
-      console.error("Database or events table not accessible");
-      return res.status(500).json({ 
-        error: 'Database configuration error',
-        details: 'Unable to access database or events table' 
-      });
+    // Get database connection string from environment variable
+    const connectionString = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
+    
+    if (!connectionString) {
+      console.error("No database connection string available");
+      return res.status(500).json({ error: 'Database configuration missing' });
     }
     
-    console.log("Fetching events from database");
+    console.log("Connecting to database...");
     
-    // Try a simpler query first
-    const eventsList = await db.query.events.findMany({
-      limit: 10
-    });
+    // Create a new pool for this request
+    const pool = new Pool({ connectionString });
     
-    console.log(`Successfully retrieved ${eventsList.length} events`);
-    return res.status(200).json(eventsList);
+    // Create a Drizzle ORM instance
+    const db = drizzle(pool);
+    
+    console.log("Fetching events from database using direct SQL...");
+    
+    // Execute raw SQL query to bypass any ORM issues
+    const result = await pool.query(`
+      SELECT * FROM events 
+      ORDER BY date DESC
+      LIMIT 50
+    `);
+    
+    // Close the pool after the query
+    await pool.end();
+    
+    console.log(`Successfully retrieved ${result.rows.length} events`);
+    
+    return res.status(200).json(result.rows);
   } catch (error) {
     console.error("Failed to fetch events:", error);
     return res.status(500).json({ 

@@ -3,8 +3,21 @@ import { getApiUrl } from "./environment";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    try {
+      // Try to parse as JSON first
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const errorData = await res.json();
+        throw new Error(`${res.status}: ${JSON.stringify(errorData)}`);
+      } else {
+        // Otherwise get as text
+        const text = await res.text();
+        throw new Error(`${res.status}: ${text || res.statusText}`);
+      }
+    } catch (parseError) {
+      // If parsing fails, just use status text
+      throw new Error(`${res.status}: ${res.statusText}`);
+    }
   }
 }
 
@@ -16,15 +29,24 @@ export async function apiRequest(
   // Convert API URL if needed
   const apiUrl = getApiUrl(url);
   
-  const res = await fetch(apiUrl, {
-    method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+  console.log(`Making ${method} request to ${apiUrl}`);
+  
+  try {
+    const res = await fetch(apiUrl, {
+      method,
+      headers: data ? { "Content-Type": "application/json" } : {},
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: "include",
+    });
 
-  await throwIfResNotOk(res);
-  return res;
+    console.log(`Response status from ${apiUrl}: ${res.status}`);
+    
+    await throwIfResNotOk(res);
+    return res;
+  } catch (error) {
+    console.error(`API request failed to ${apiUrl}:`, error);
+    throw error;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -36,16 +58,28 @@ export const getQueryFn: <T>(options: {
     // Convert API URL if needed
     const url = getApiUrl(queryKey);
     
-    const res = await fetch(url, {
-      credentials: "include",
-    });
+    console.log(`Query function fetching from ${url}`);
+    
+    try {
+      const res = await fetch(url, {
+        credentials: "include",
+      });
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+      console.log(`Query response from ${url}: ${res.status}`);
+      
+      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+        console.log("Unauthorized access - returning null as configured");
+        return null;
+      }
+
+      await throwIfResNotOk(res);
+      const data = await res.json();
+      console.log(`Data received from ${url}:`, data);
+      return data;
+    } catch (error) {
+      console.error(`Query failed for ${url}:`, error);
+      throw error;
     }
-
-    await throwIfResNotOk(res);
-    return await res.json();
   };
 
 export const queryClient = new QueryClient({
@@ -55,10 +89,10 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: Infinity,
-      retry: false,
+      retry: 1,
     },
     mutations: {
-      retry: false,
+      retry: 1,
     },
   },
 });

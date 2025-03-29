@@ -37,29 +37,52 @@ export const getApiUrl = (path: string | unknown[]): string => {
   // Now we know path is a string
   const pathStr = path as string;
   
+  // Log the incoming path for debugging
+  console.log(`Converting path: ${pathStr}`);
+  
   // If the path already starts with the API URL, return it as is
   if (pathStr.startsWith(API_URL)) {
+    console.log(`Path already has API_URL: ${pathStr}`);
     return pathStr;
+  }
+  
+  // Add explicit handling for direct API endpoints
+  if (pathStr === '/api/events') {
+    const url = `${getDomain()}/api/events`;
+    console.log(`Direct events endpoint: ${url}`);
+    return url;
+  }
+  
+  if (pathStr === '/api/venues') {
+    const url = `${getDomain()}/api/venues`;
+    console.log(`Direct venues endpoint: ${url}`);
+    return url;
   }
   
   // If path already starts with /api, replace it with the appropriate API URL
   if (pathStr.startsWith('/api')) {
-    return pathStr.replace('/api', API_URL);
+    const url = pathStr.replace('/api', API_URL);
+    console.log(`Converted API path: ${pathStr} -> ${url}`);
+    return url;
   }
   
   // Handle client-side routes for events and venues to point to API
   if (pathStr.startsWith('/events/') && !pathStr.includes('edit')) {
     const eventId = pathStr.substring(8); // Remove '/events/'
-    return `${API_URL}/events/${eventId}`;
+    const url = `${API_URL}/events/${eventId}`;
+    console.log(`Converted events path: ${pathStr} -> ${url}`);
+    return url;
   }
   
   if (pathStr.startsWith('/venues/') && !pathStr.includes('edit')) {
     const venueId = pathStr.substring(8); // Remove '/venues/'
-    return `${API_URL}/venues/${venueId}`;
+    const url = `${API_URL}/venues/${venueId}`;
+    console.log(`Converted venues path: ${pathStr} -> ${url}`);
+    return url;
   }
   
   // Otherwise, concatenate the API URL and path
   const finalUrl = `${API_URL}${pathStr.startsWith('/') ? pathStr : `/${pathStr}`}`;
-  console.log("API Request URL:", finalUrl);
+  console.log(`Final API URL: ${pathStr} -> ${finalUrl}`);
   return finalUrl;
 };
