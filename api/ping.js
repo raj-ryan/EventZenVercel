@@ -1,8 +1,8 @@
 // Ping endpoint with MongoDB connection test
-const { connectToDatabase } = require('./mongo');
+import { connectToDatabase } from './mongo.js';
 
 // Export default function for Vercel serverless function
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -51,4 +51,4 @@ module.exports = async (req, res) => {
   }
   
   res.status(200).json(response);
-}; 
+} 

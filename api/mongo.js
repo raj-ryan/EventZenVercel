@@ -42,8 +42,6 @@ export async function connectToDatabase() {
       try {
         // Connect to the MongoDB database
         const client = new MongoClient(MONGODB_URI, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
           connectTimeoutMS: 5000,
           socketTimeoutMS: 30000,
         });
