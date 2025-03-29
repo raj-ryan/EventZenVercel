@@ -1,7 +1,9 @@
 // MongoDB connection helper for Vercel
 import { MongoClient } from 'mongodb';
-import venues from './data/venues.js';
-import events from './data/events.js';
+
+// Import data using dynamic import for ESM compatibility
+const venues = await import('./data/venues.js').then(m => m.default || m);
+const events = await import('./data/events.js').then(m => m.default || m);
 
 // MongoDB Connection URI from environment variable
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -106,7 +108,7 @@ async function initializeData(db) {
     }
   } catch (error) {
     console.error('Error initializing data:', error);
-    throw error; // Propagate the error
+    throw error;
   }
 }
 

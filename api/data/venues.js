@@ -1,5 +1,5 @@
 // Sample venue data for MongoDB
-module.exports = [
+export default [
   {
     id: 1,
     name: "Grand Ballroom",
