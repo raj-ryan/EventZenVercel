@@ -66,7 +66,7 @@ const eventFormSchema = z.object({
 type EventFormValues = z.infer<typeof eventFormSchema>;
 
 // Define venue interface
-interface Venue {
+interface VenueType {
   id: number;
   name: string;
   city: string;
@@ -81,7 +81,6 @@ export default function EventForm() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [venues, setVenues] = useState<Venue[]>([]);
   
   // Determine if this is edit mode based on the route
   const isEditMode = Boolean(match && params?.id);
@@ -111,8 +110,7 @@ export default function EventForm() {
     queryFn: async () => {
       if (!isEditMode) return null;
       const response = await apiRequest('GET', `/api/events/${params!.id}`);
-      const data = await response.json();
-      return data;
+      return response;
     },
     enabled: isEditMode ? true : false,
   });
@@ -135,8 +133,12 @@ export default function EventForm() {
     }
   }, [eventData, form]);
   
-  // Fetch venues using React Query instead of useEffect
-  const { data: venues = [], isLoading: isVenuesLoading, error: venuesError } = useQuery({
+  // Fetch available venues using React Query
+  const { 
+    data: availableVenues = [], 
+    isLoading: isVenuesLoading, 
+    error: venuesError 
+  } = useQuery<VenueType[]>({
     queryKey: ['/api/venues'],
     queryFn: async () => {
       try {
@@ -439,8 +441,8 @@ export default function EventForm() {
                             Loading venues...
                           </div>
                         </SelectItem>
-                      ) : venues.length > 0 ? (
-                        venues.map((venue) => (
+                      ) : availableVenues.length > 0 ? (
+                        availableVenues.map((venue) => (
                           <SelectItem key={venue.id} value={venue.id.toString()}>
                             {venue.name}
                           </SelectItem>
