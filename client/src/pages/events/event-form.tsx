@@ -161,8 +161,10 @@ export default function EventForm() {
   // Create event mutation
   const createEventMutation = useMutation({
     mutationFn: async (eventData: EventFormValues) => {
-      const response = await apiRequest('POST', '/api/events', eventData);
-      return response.json();
+      console.log('Submitting event data:', eventData);
+      const response = await apiRequest('POST', '/events', eventData);
+      console.log('Event creation result:', response);
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
@@ -185,8 +187,10 @@ export default function EventForm() {
   // Update event mutation
   const updateEventMutation = useMutation({
     mutationFn: async (eventData: EventFormValues) => {
-      const response = await apiRequest('PUT', `/api/events/${params!.id}`, eventData);
-      return response.json();
+      console.log('Updating event data:', eventData);
+      const response = await apiRequest('PUT', `/events/${params!.id}`, eventData);
+      console.log('Event update result:', response);
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
@@ -478,8 +482,11 @@ export default function EventForm() {
                       type="number"
                       min="1"
                       placeholder="100"
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      value={field.value || ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? '' : parseInt(e.target.value);
+                        field.onChange(value);
+                      }}
                     />
                   </FormControl>
                   <FormDescription>
@@ -502,8 +509,11 @@ export default function EventForm() {
                       min="0"
                       step="0.01"
                       placeholder="50.00"
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                      value={field.value || ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? '' : parseFloat(e.target.value);
+                        field.onChange(value);
+                      }}
                     />
                   </FormControl>
                   <FormDescription>
