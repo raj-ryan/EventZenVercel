@@ -5,9 +5,17 @@
 // Determine if we're in production or development
 const isProd = import.meta.env.PROD;
 
+// Get the current domain for production
+const getDomain = () => {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return '';
+};
+
 // API URL will be different depending on environment
 export const API_URL = isProd 
-  ? '/api' // Production API URL (Vercel API Routes)
+  ? `${getDomain()}/api` // Production API URL (absolute path)
   : '/api'; // Development API URL
 
 // Export other environment variables as needed
