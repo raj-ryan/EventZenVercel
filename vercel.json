@@ -4,11 +4,16 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "installCommand": "npm install",
+  "functions": {
+    "api/*.js": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  },
   "routes": [
     { "src": "/api/ping", "dest": "/api/ping.js" },
     { "src": "/api/events", "dest": "/api/events.js" },
     { "src": "/api/venues", "dest": "/api/venues.js" },
-    { "src": "/api/(.*)", "dest": "/api/index.js" },
     { "handle": "filesystem" },
     { "src": "/assets/(.*)", "dest": "/assets/$1" },
     { "src": "/(.*)", "dest": "/index.html" }

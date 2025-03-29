@@ -1,16 +1,16 @@
 // Simple ping endpoint for testing
-import express from 'express';
-import cors from 'cors';
-
-const app = express();
-
-app.use(cors({
-  origin: '*',
-  methods: 'GET,OPTIONS'
-}));
-
-app.get('/api/ping', (req, res) => {
+module.exports = (req, res) => {
   console.log('Ping received at:', new Date().toISOString());
+  
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  // Handle OPTIONS request (preflight)
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
   
   res.status(200).json({
     status: 'ok',
@@ -19,6 +19,4 @@ app.get('/api/ping', (req, res) => {
     message: 'API is working properly!',
     vercel: true
   });
-});
-
-export default app; 
+} 

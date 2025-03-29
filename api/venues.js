@@ -1,6 +1,6 @@
 // Standalone Vercel serverless function for venues
-import { Pool } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
+const { Pool } = require('@neondatabase/serverless');
+const { drizzle } = require('drizzle-orm/neon-serverless');
 
 // Define schema inline to avoid imports
 const venues = {
@@ -21,7 +21,7 @@ const venues = {
   updatedAt: { name: 'updated_at' }
 };
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   console.log("Venues API called:", req.url);
   
   // Set CORS headers
