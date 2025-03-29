@@ -52,34 +52,29 @@ export async function apiRequest(
     // Check if response is ok (status in the range 200-299)
     if (!response.ok) {
       let errorMessage = `HTTP error! status: ${response.status}`;
-      try {
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType && contentType.includes('application/json')) {
         const errorData = await response.json();
         errorMessage = errorData.error || errorData.message || errorMessage;
-      } catch {
-        // If we can't parse JSON, try to get text
-        try {
-          const text = await response.text();
-          errorMessage = text || errorMessage;
-        } catch {
-          // If we can't get text either, use the status text
-          errorMessage = response.statusText || errorMessage;
-        }
+      } else {
+        const text = await response.text();
+        errorMessage = text || errorMessage;
       }
       throw new Error(errorMessage);
     }
 
-    // Try to parse response as JSON
-    try {
-      const jsonData = await response.json();
-      console.log('API Response Data:', jsonData);
-      return jsonData;
-    } catch (error) {
-      console.error('Error parsing JSON response:', error);
-      // If JSON parsing fails, try to get the response as text
-      const text = await response.text();
-      console.error('Raw response:', text);
-      throw new Error('Invalid JSON response from server');
+    // Check content type
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error('Non-JSON response received:', contentType);
+      throw new Error('Server returned non-JSON response');
     }
+
+    // Parse JSON response
+    const jsonData = await response.json();
+    console.log('API Response Data:', jsonData);
+    return jsonData;
   } catch (error) {
     console.error('API Request Error:', error);
     throw error;
@@ -139,3 +134,4 @@ export const queryClient = new QueryClient({
 export function invalidateQueries(queryKey: string | readonly unknown[]) {
   return queryClient.invalidateQueries({ queryKey: queryKey as readonly unknown[] });
 }
+

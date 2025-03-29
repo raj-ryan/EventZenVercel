@@ -447,9 +447,8 @@ export async function registerRoutes(app: Express): Promise<Express> {
       const eventId = parseInt(req.params.id);
       console.log(`Looking for event with ID: ${eventId}`);
       
-      // Get all events to debug
-      const allEvents = await storage.getEvents(1);
-      console.log("Available events:", JSON.stringify(allEvents.map(e => ({ id: e.id, name: e.name }))));
+      // Set JSON content type header
+      res.setHeader('Content-Type', 'application/json');
       
       // Get event with venue
       const event = await storage.getEvent(eventId);
@@ -473,10 +472,10 @@ export async function registerRoutes(app: Express): Promise<Express> {
         venue: venue || null
       };
       
-      res.json(formattedEvent);
+      return res.json(formattedEvent);
     } catch (error) {
       console.error("Error getting event:", error);
-      res.status(500).json({ 
+      return res.status(500).json({ 
         message: "Error getting event", 
         error: error instanceof Error ? error.message : "Unknown error" 
       });
@@ -630,9 +629,8 @@ export async function registerRoutes(app: Express): Promise<Express> {
       const venueId = parseInt(req.params.id);
       console.log(`Looking for venue with ID: ${venueId}`);
       
-      // Get all venues to debug
-      const allVenues = await storage.getVenues(100);
-      console.log("Available venues:", JSON.stringify(allVenues.map(v => ({ id: v.id, name: v.name }))));
+      // Set JSON content type header
+      res.setHeader('Content-Type', 'application/json');
       
       // Get venue
       const venue = await storage.getVenue(venueId);
@@ -642,17 +640,10 @@ export async function registerRoutes(app: Express): Promise<Express> {
         return res.status(404).json({ message: "Venue not found" });
       }
       
-      // Format dates as ISO strings
-      const formattedVenue = {
-        ...venue,
-        createdAt: venue.createdAt.toISOString(),
-        updatedAt: venue.updatedAt.toISOString()
-      };
-      
-      res.json(formattedVenue);
+      return res.json(venue);
     } catch (error) {
       console.error("Error getting venue:", error);
-      res.status(500).json({ 
+      return res.status(500).json({ 
         message: "Error getting venue", 
         error: error instanceof Error ? error.message : "Unknown error" 
       });

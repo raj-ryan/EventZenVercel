@@ -119,11 +119,11 @@ export default function EventDetail() {
 
   // Combine event and venue data
   useEffect(() => {
-    if (event && venue) {
+    if (event) {
       // Transform the data to match the EventDetailUI interface
-      setEventDetail({
+      const eventDetail: EventDetailUI = {
         ...event,
-        venue: {
+        venue: venue ? {
           id: venue.id,
           name: venue.name,
           address: venue.address || "",
@@ -131,22 +131,7 @@ export default function EventDetail() {
           amenities: venue.amenities ? 
             (Array.isArray(venue.amenities) ? venue.amenities as string[] : []) : 
             []
-        },
-        organizer: {
-          id: event.createdBy,
-          name: "Event Organizer", // We can fetch the actual organizer name if needed
-          avatar: "O"
-        },
-        attendees: {
-          count: 0, // We can fetch the actual count if needed
-          list: []
-        }
-      });
-    } else if (event) {
-      // If venue data is not available, still show the event with placeholder venue
-      setEventDetail({
-        ...event,
-        venue: {
+        } : {
           id: event.venueId,
           name: "Loading venue...",
           address: "",
@@ -162,7 +147,8 @@ export default function EventDetail() {
           count: 0,
           list: []
         }
-      });
+      };
+      setEventDetail(eventDetail);
     }
   }, [event, venue]);
   
