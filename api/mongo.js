@@ -40,10 +40,18 @@ export async function connectToDatabase() {
     // Create a new connection promise
     connectionPromise = new Promise(async (resolve, reject) => {
       try {
-        // Connect to the MongoDB database
+        // Connect to the MongoDB database with improved options
         const client = new MongoClient(MONGODB_URI, {
-          connectTimeoutMS: 5000,
-          socketTimeoutMS: 30000,
+          connectTimeoutMS: 10000,
+          socketTimeoutMS: 45000,
+          serverSelectionTimeoutMS: 10000,
+          retryWrites: true,
+          retryReads: true,
+          maxPoolSize: 1,
+          minPoolSize: 1,
+          maxIdleTimeMS: 120000,
+          ssl: true,
+          tls: true
         });
 
         await client.connect();

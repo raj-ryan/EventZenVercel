@@ -1,7 +1,7 @@
 {
   "version": 2,
   "env": {
-    "MONGODB_URI": "mongodb+srv://eventzen:eventzen123@cluster0.g7xsb.mongodb.net/eventzen?retryWrites=true&w=majority"
+    "MONGODB_URI": "mongodb://eventzen:eventzen123@ac-iqxqxvl-shard-00-00.g7xsb.mongodb.net:27017,ac-iqxqxvl-shard-00-01.g7xsb.mongodb.net:27017,ac-iqxqxvl-shard-00-02.g7xsb.mongodb.net:27017/eventzen?ssl=true&replicaSet=atlas-qw7bqe-shard-0&authSource=admin&retryWrites=true&w=majority"
   },
   "functions": {
     "api/*.js": {
