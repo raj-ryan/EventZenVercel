@@ -6,20 +6,21 @@
 const isProd = import.meta.env.PROD;
 
 // Get the current domain for production
-const getDomain = () => {
-  if (typeof window !== 'undefined') {
-    return window.location.origin;
+export function getDomain() {
+  if (typeof window === 'undefined') {
+    return '';
   }
-  return '';
-};
+  
+  const isProduction = window.location.hostname !== 'localhost' && 
+                       window.location.hostname !== '127.0.0.1';
+  return isProduction ? window.location.origin : 'http://localhost:5000';
+}
 
 // Log the environment for debugging
 console.log("Environment:", isProd ? "Production" : "Development");
 
 // API URL will be different depending on environment
-export const API_URL = isProd 
-  ? `${getDomain()}/api` // Production API URL (absolute path)
-  : '/api'; // Development API URL
+export const API_URL = `${getDomain()}/api`;
 
 // Log the API URL for debugging
 console.log("API URL:", API_URL);
