@@ -1,10 +1,10 @@
 // MongoDB connection helper for Vercel
 const { MongoClient } = require('mongodb');
-const venues = require('../mongo-data/venues');
-const events = require('../mongo-data/events');
+const venues = require('./data/venues');
+const events = require('./data/events');
 
-// MongoDB Connection URI - hardcoded for reliability in serverless environments
-const MONGODB_URI = 'mongodb+srv://eventzen:eventzen123@cluster0.g7xsb.mongodb.net/eventzen?retryWrites=true&w=majority';
+// MongoDB Connection URI from environment variable
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://eventzen:eventzen123@cluster0.g7xsb.mongodb.net/eventzen?retryWrites=true&w=majority';
 const DB_NAME = 'eventzen';
 
 // Global variables for caching the database connection

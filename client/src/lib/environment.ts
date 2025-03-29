@@ -18,7 +18,7 @@ export function getDomain() {
 console.log("Environment:", isProd ? "Production" : "Development");
 
 // API URL will be different depending on environment
-export const API_URL = `${getDomain()}/api`;
+export const API_URL = isProd ? `${getDomain()}/api` : `${getDomain()}/api`;
 
 // Log the API URL for debugging
 console.log("API URL:", API_URL);
@@ -40,12 +40,6 @@ export const getApiUrl = (path: string | unknown[]): string => {
   // Log the incoming path for debugging
   console.log(`Converting path: ${pathStr}`);
   
-  // If the path already starts with the API URL, return it as is
-  if (pathStr.startsWith(API_URL)) {
-    console.log(`Path already has API_URL: ${pathStr}`);
-    return pathStr;
-  }
-  
   // Add explicit handling for direct API endpoints
   if (pathStr === '/api/events') {
     const url = `${getDomain()}/api/events`;
@@ -59,30 +53,30 @@ export const getApiUrl = (path: string | unknown[]): string => {
     return url;
   }
   
-  // If path already starts with /api, replace it with the appropriate API URL
-  if (pathStr.startsWith('/api')) {
-    const url = pathStr.replace('/api', API_URL);
-    console.log(`Converted API path: ${pathStr} -> ${url}`);
+  // For all other API routes, use the domain directly
+  if (pathStr.startsWith('/api/')) {
+    const url = `${getDomain()}${pathStr}`;
+    console.log(`API path: ${pathStr} -> ${url}`);
     return url;
   }
   
   // Handle client-side routes for events and venues to point to API
   if (pathStr.startsWith('/events/') && !pathStr.includes('edit')) {
     const eventId = pathStr.substring(8); // Remove '/events/'
-    const url = `${API_URL}/events/${eventId}`;
+    const url = `${getDomain()}/api/events/${eventId}`;
     console.log(`Converted events path: ${pathStr} -> ${url}`);
     return url;
   }
   
   if (pathStr.startsWith('/venues/') && !pathStr.includes('edit')) {
     const venueId = pathStr.substring(8); // Remove '/venues/'
-    const url = `${API_URL}/venues/${venueId}`;
+    const url = `${getDomain()}/api/venues/${venueId}`;
     console.log(`Converted venues path: ${pathStr} -> ${url}`);
     return url;
   }
   
-  // Otherwise, concatenate the API URL and path
-  const finalUrl = `${API_URL}${pathStr.startsWith('/') ? pathStr : `/${pathStr}`}`;
+  // Otherwise, use the domain with api prefix
+  const finalUrl = `${getDomain()}/api${pathStr.startsWith('/') ? pathStr : `/${pathStr}`}`;
   console.log(`Final API URL: ${pathStr} -> ${finalUrl}`);
   return finalUrl;
 };
