@@ -11,9 +11,7 @@ export function getDomain() {
     return '';
   }
   
-  const isProduction = window.location.hostname !== 'localhost' && 
-                       window.location.hostname !== '127.0.0.1';
-  return isProduction ? window.location.origin : 'http://localhost:5000';
+  return window.location.origin;
 }
 
 // Log the environment for debugging
