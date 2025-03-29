@@ -1,5 +1,7 @@
-// Simple ping endpoint for testing
-module.exports = (req, res) => {
+// Ping endpoint with database connection test
+const { createPool } = require('../server/db');
+
+module.exports = async (req, res) => {
   console.log('Ping received at:', new Date().toISOString());
   
   // Set CORS headers
@@ -12,11 +14,35 @@ module.exports = (req, res) => {
     return res.status(200).end();
   }
   
-  res.status(200).json({
+  const response = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
     message: 'API is working properly!',
-    vercel: true
-  });
+    vercel: true,
+    database: false
+  };
+  
+  // Test database connection
+  let pool;
+  try {
+    pool = createPool();
+    const result = await pool.query('SELECT NOW()');
+    response.database = true;
+    response.databaseTimestamp = result.rows[0].now;
+    console.log('Database connection test successful');
+  } catch (error) {
+    console.error('Database connection test failed:', error);
+    response.databaseError = error.message;
+  } finally {
+    if (pool) {
+      try {
+        await pool.end();
+      } catch (err) {
+        console.error('Error closing pool:', err);
+      }
+    }
+  }
+  
+  res.status(200).json(response);
 } 

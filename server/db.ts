@@ -8,57 +8,63 @@ import { sql } from 'drizzle-orm';
 // Load environment variables
 dotenv.config();
 
-// For debugging
-console.log("DB connection setup starting...");
-console.log("Node environment:", process.env.NODE_ENV);
+// Log environment for debugging
+console.log("DB connection setup - Environment:", process.env.NODE_ENV);
 
-// Use unpooled connection in production for serverless functions
-let connectionString;
-if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL_UNPOOLED) {
-  console.log("Using UNPOOLED connection for serverless functions");
-  connectionString = process.env.DATABASE_URL_UNPOOLED;
-} else if (process.env.DATABASE_URL) {
-  console.log("Using pooled connection");
-  connectionString = process.env.DATABASE_URL;
+// In serverless environments, we use Neon's HTTP protocol instead of WebSockets
+if (process.env.NODE_ENV === 'production') {
+  console.log("Production: Using HTTP protocol for Neon");
+  // Don't set WebSocket in production (serverless)
 } else {
-  console.error("⚠️ No DATABASE_URL is set in environment variables");
-  // For development fallback
-  connectionString = "postgresql://localhost:5432/eventzen";
-}
-
-console.log("Database connection type:", connectionString.includes('pooler') ? 'Pooled' : 'Direct');
-console.log("Connection string format:", connectionString.replace(/:.+@/, ':*****@'));
-
-// In serverless environments, we don't use WebSockets
-if (process.env.NODE_ENV !== 'production') {
-  console.log("Development environment: Using WebSocket for Neon");
+  console.log("Development: Using WebSocket for Neon");
   neonConfig.webSocketConstructor = ws;
-} else {
-  console.log("Production environment: Using HTTP for Neon");
-  // In production we use HTTP instead of WebSockets
 }
 
-// Create a single pool instance
-const pool = new Pool({ 
-  connectionString,
-  max: 10
-});
-
-// Create a single db instance
-const db = drizzle(pool, { schema });
-
-// Get pool function (returns existing pool)
-export function getPool() {
-  return pool;
+// For serverless functions, create connection on demand
+export function createPool() {
+  // Get connection string based on environment
+  const connectionString = process.env.NODE_ENV === 'production' 
+    ? process.env.DATABASE_URL_UNPOOLED 
+    : process.env.DATABASE_URL;
+    
+  if (!connectionString) {
+    console.error("DATABASE_URL not found in environment!");
+    throw new Error("Database connection string missing");
+  }
+  
+  console.log("Creating database connection pool");
+  
+  // Return a new pool with minimal configuration
+  return new Pool({
+    connectionString,
+    max: 1
+  });
 }
 
-// Get db function (returns existing db)
-export function getDb() {
-  return db;
+// Create DB instance for a given pool
+export function createDb(pool: Pool) {
+  return drizzle(pool, { schema });
 }
 
-// Export for direct use
-export { pool, db };
+// For non-serverless use
+let globalPool: Pool | null = null;
+
+// Get a shared pool for development environment
+export function getSharedPool() {
+  if (!globalPool) {
+    globalPool = createPool();
+  }
+  return globalPool;
+}
+
+// Get a shared db instance for development environment
+export function getSharedDb() {
+  const pool = getSharedPool();
+  return createDb(pool);
+}
+
+// Export for direct use in development
+export const db = getSharedDb();
 
 // Run a test query to verify connection (only in non-production)
 if (process.env.NODE_ENV !== 'production') {
