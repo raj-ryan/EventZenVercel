@@ -3,6 +3,8 @@ const { db } = require('../server/db');
 const { venues } = require('../shared/schema');
 
 module.exports = async (req, res) => {
+  console.log("Venues API called:", req.url);
+  
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -19,11 +21,20 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // Verify we have a database connection first
+    if (!db || !db.query || !db.query.venues) {
+      console.error("Database or venues table not accessible");
+      return res.status(500).json({ 
+        error: 'Database configuration error',
+        details: 'Unable to access database or venues table' 
+      });
+    }
+    
     console.log("Fetching venues from database");
     
-    // Basic query with minimal fields
+    // Try a simpler query first
     const venuesList = await db.query.venues.findMany({
-      limit: 50
+      limit: 10
     });
     
     console.log(`Successfully retrieved ${venuesList.length} venues`);
@@ -32,7 +43,8 @@ module.exports = async (req, res) => {
     console.error("Failed to fetch venues:", error);
     return res.status(500).json({ 
       error: 'Failed to fetch venues', 
-      message: error.message
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 } 

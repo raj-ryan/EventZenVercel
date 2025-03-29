@@ -12,16 +12,22 @@ dotenv.config();
 console.log("DB connection setup starting...");
 console.log("Node environment:", process.env.NODE_ENV);
 
-// Direct connection for serverless environment
-let connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  console.error("⚠️ DATABASE_URL is not set in environment variables");
+// Use unpooled connection in production for serverless functions
+let connectionString;
+if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL_UNPOOLED) {
+  console.log("Using UNPOOLED connection for serverless functions");
+  connectionString = process.env.DATABASE_URL_UNPOOLED;
+} else if (process.env.DATABASE_URL) {
+  console.log("Using pooled connection");
+  connectionString = process.env.DATABASE_URL;
+} else {
+  console.error("⚠️ No DATABASE_URL is set in environment variables");
   // For development fallback
   connectionString = "postgresql://localhost:5432/eventzen";
 }
 
-console.log("Using database connection string:", connectionString.replace(/:.+@/, ':*****@'));
+console.log("Database connection type:", connectionString.includes('pooler') ? 'Pooled' : 'Direct');
+console.log("Connection string format:", connectionString.replace(/:.+@/, ':*****@'));
 
 // In serverless environments, we don't use WebSockets
 if (process.env.NODE_ENV !== 'production') {
