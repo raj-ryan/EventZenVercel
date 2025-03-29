@@ -2,12 +2,15 @@
   "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "framework": "vite",
+  "installCommand": "npm install",
   "routes": [
     { "src": "/api/ping", "dest": "/api/ping.js" },
     { "src": "/api/events", "dest": "/api/events.js" },
     { "src": "/api/venues", "dest": "/api/venues.js" },
     { "src": "/api/(.*)", "dest": "/api/index.js" },
-    { "src": "/(.*\\.(js|css|png|jpg|jpeg|svg|ico|json))", "dest": "/$1" },
+    { "handle": "filesystem" },
+    { "src": "/assets/(.*)", "dest": "/assets/$1" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],
   "env": {
