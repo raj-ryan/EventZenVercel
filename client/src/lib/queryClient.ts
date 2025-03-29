@@ -28,7 +28,9 @@ export async function apiRequest(
   customHeaders?: Record<string, string>
 ) {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-  const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}/api${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  // Remove any leading /api from the endpoint to prevent duplication
+  const cleanEndpoint = endpoint.replace(/^\/api/, '');
+  const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}/api${cleanEndpoint.startsWith('/') ? cleanEndpoint : `/${cleanEndpoint}`}`;
 
   console.log('Making API request to:', url);
 
@@ -37,6 +39,7 @@ export async function apiRequest(
       method: method.toUpperCase(),
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         ...customHeaders,
       },
       body: data ? JSON.stringify(data) : undefined,
@@ -46,44 +49,36 @@ export async function apiRequest(
     console.log('API Response Status:', response.status);
     console.log('API Response Headers:', Object.fromEntries(response.headers.entries()));
 
-    // Check content type
-    const contentType = response.headers.get('content-type');
-    const isJson = contentType && contentType.includes('application/json');
-
-    // Handle non-200 responses
+    // Check if response is ok (status in the range 200-299)
     if (!response.ok) {
       let errorMessage = `HTTP error! status: ${response.status}`;
-      
       try {
-        if (isJson) {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorData.message || errorMessage;
-        } else {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.message || errorMessage;
+      } catch {
+        // If we can't parse JSON, try to get text
+        try {
           const text = await response.text();
-          console.error('Non-JSON error response:', text);
-          errorMessage = `Server error: ${text.slice(0, 200)}...`;
+          errorMessage = text || errorMessage;
+        } catch {
+          // If we can't get text either, use the status text
+          errorMessage = response.statusText || errorMessage;
         }
-      } catch (parseError) {
-        console.error('Error parsing error response:', parseError);
       }
-      
       throw new Error(errorMessage);
     }
 
-    // Handle successful response
-    if (isJson) {
-      try {
-        const jsonData = await response.json();
-        console.log('API Response Data:', jsonData);
-        return jsonData;
-      } catch (error) {
-        console.error('Error parsing JSON response:', error);
-        throw new Error('Invalid JSON response from server');
-      }
-    } else {
+    // Try to parse response as JSON
+    try {
+      const jsonData = await response.json();
+      console.log('API Response Data:', jsonData);
+      return jsonData;
+    } catch (error) {
+      console.error('Error parsing JSON response:', error);
+      // If JSON parsing fails, try to get the response as text
       const text = await response.text();
-      console.error('Unexpected non-JSON response:', text);
-      throw new Error('Server returned non-JSON response');
+      console.error('Raw response:', text);
+      throw new Error('Invalid JSON response from server');
     }
   } catch (error) {
     console.error('API Request Error:', error);

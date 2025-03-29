@@ -112,26 +112,18 @@ export default function BookVenueModal({ venue, isOpen, onClose }: BookVenueModa
       };
       
       console.log('Venue booking data being sent:', bookingData);
-      const response = await apiRequest('POST', '/api/venue-bookings', bookingData);
-      
-      if (!response.ok) {
-        const result = await response.json();
-        throw new Error(result.message || 'Failed to create booking');
-      }
-      
-      return await response.json();
+      const response = await apiRequest('POST', '/bookings', bookingData);
+      return response;
     },
     onSuccess: () => {
-      // Refresh bookings data
-      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['/bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['/venues', venue.id] });
       
-      // Show success notification
       toast({
         title: "Venue Booked!",
-        description: `You have successfully booked ${venue.name}.`,
+        description: "Your venue booking has been confirmed.",
       });
       
-      // Close the modal and reset form
       onClose();
       form.reset();
     },

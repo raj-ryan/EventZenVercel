@@ -39,18 +39,20 @@ export default function VenueDetail() {
     isLoading, 
     error 
   } = useQuery<Venue>({
-    queryKey: ['/api/venues', params?.id],
+    queryKey: ['/venues', params?.id],
     queryFn: async () => {
       console.log('Fetching venue with ID:', params?.id);
-      const response = await apiRequest('GET', `/api/venues/${params?.id}`);
-      const data = await response.json();
-      console.log('Venue data received:', data);
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to fetch venue');
+      try {
+        const response = await apiRequest('GET', `/venues/${params?.id}`);
+        console.log('Venue data received:', response);
+        return response;
+      } catch (error) {
+        console.error('Error fetching venue:', error);
+        throw error;
       }
-      return data;
     },
-    enabled: !!params?.id
+    enabled: !!params?.id,
+    retry: 2
   });
   
   if (isLoading) {

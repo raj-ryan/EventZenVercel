@@ -61,13 +61,13 @@ export default function BookEventModal({ isOpen, onClose, event }: BookEventModa
       };
       
       console.log("Submitting booking with data:", finalBookingData);
-      const response = await apiRequest('POST', '/api/bookings', finalBookingData);
-      return await response.json();
+      const response = await apiRequest('POST', '/bookings', finalBookingData);
+      return response;
     },
     onSuccess: (data) => {
       // Invalidate the relevant queries
-      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/events', event.id] });
+      queryClient.invalidateQueries({ queryKey: ['/bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['/events', event.id] });
       
       setIsProcessingPayment(false);
       setIsBookingComplete(true);

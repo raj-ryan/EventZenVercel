@@ -85,14 +85,13 @@ export default function EventDetail() {
   
   // Fetch event data
   const { data: event, isLoading: eventLoading, error: eventError } = useQuery<Event>({
-    queryKey: ['/api/events', params?.id],
+    queryKey: ['/events', params?.id],
     queryFn: async () => {
       console.log(`Fetching event with ID: ${params?.id}`);
       try {
-        const response = await apiRequest('GET', `/api/events/${params?.id}`);
-        const data = await response.json();
-        console.log('Event data received:', data);
-        return data;
+        const response = await apiRequest('GET', `/events/${params?.id}`);
+        console.log('Event data received:', response);
+        return response;
       } catch (error) {
         console.error('Error fetching event:', error);
         throw error;
@@ -103,9 +102,19 @@ export default function EventDetail() {
 
   // Fetch venue data if event has a venueId
   const { data: venue, isLoading: venueLoading, error: venueError } = useQuery<Venue>({
-    queryKey: ['/api/venues', event?.venueId],
-    enabled: !!event?.venueId
-    // Using the default queryFn from queryClient that handles API URL correctly
+    queryKey: ['/venues', event?.venueId],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest('GET', `/venues/${event?.venueId}`);
+        console.log('Venue data received:', response);
+        return response;
+      } catch (error) {
+        console.error('Error fetching venue:', error);
+        throw error;
+      }
+    },
+    enabled: !!event?.venueId,
+    retry: 1
   });
 
   // Combine event and venue data

@@ -106,10 +106,10 @@ export default function EventForm() {
   
   // Fetch event data if in edit mode
   const { data: eventData, isLoading: isLoadingEvent } = useQuery({
-    queryKey: ['/api/events', params?.id],
+    queryKey: ['/events', params?.id],
     queryFn: async () => {
       if (!isEditMode) return null;
-      const response = await apiRequest('GET', `/api/events/${params!.id}`);
+      const response = await apiRequest('GET', `/events/${params!.id}`);
       return response;
     },
     enabled: isEditMode ? true : false,
@@ -139,10 +139,10 @@ export default function EventForm() {
     isLoading: isVenuesLoading, 
     error: venuesError 
   } = useQuery<VenueType[]>({
-    queryKey: ['/api/venues'],
+    queryKey: ['/venues'],
     queryFn: async () => {
       try {
-        const response = await apiRequest('GET', '/api/venues');
+        const response = await apiRequest('GET', '/venues');
         console.log('Fetched venues:', response);
         return Array.isArray(response) ? response : [];
       } catch (error) {
