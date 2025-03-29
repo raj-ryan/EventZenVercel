@@ -1,7 +1,7 @@
 // MongoDB connection helper for Vercel
-const { MongoClient } = require('mongodb');
-const venues = require('./data/venues');
-const events = require('./data/events');
+import { MongoClient } from 'mongodb';
+import venues from './data/venues.js';
+import events from './data/events.js';
 
 // MongoDB Connection URI from environment variable
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -15,7 +15,7 @@ let connectionPromise = null;
 /**
  * Connect to MongoDB with connection caching optimized for serverless functions
  */
-async function connectToDatabase() {
+export async function connectToDatabase() {
   // If we already have a cached connection, use it
   if (cachedClient && cachedDb) {
     console.log("Using cached database connection");

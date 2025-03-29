@@ -4,9 +4,8 @@
     "MONGODB_URI": "mongodb+srv://eventzen:eventzen123@cluster0.g7xsb.mongodb.net/eventzen?retryWrites=true&w=majority"
   },
   "functions": {
-    "api/**/*.js": {
-      "memory": 1024,
-      "maxDuration": 10
+    "api/*.js": {
+      "runtime": "@vercel/node@3.0.0"
     }
   },
   "buildCommand": "npm run build",
@@ -14,7 +13,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/$1.js"
+      "dest": "api/$1"
     },
     {
       "src": "^/assets/(.*)",

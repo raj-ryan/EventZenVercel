@@ -1,8 +1,7 @@
-// Events API endpoint using MongoDB
-const { connectToDatabase } = require('./mongo');
+import { connectToDatabase } from './mongo.js';
 
 // Export default function for Vercel serverless function
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS, POST, PUT, DELETE');
@@ -84,4 +83,4 @@ module.exports = async (req, res) => {
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
-}; 
+} 
