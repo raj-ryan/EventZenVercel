@@ -110,6 +110,4 @@ async function initializeData(db) {
     console.error('Error initializing data:', error);
     throw error;
   }
-}
-
-module.exports = { connectToDatabase }; 
+} 
