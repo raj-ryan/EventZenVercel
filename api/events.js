@@ -1,95 +1,63 @@
-// Events API endpoint optimized for Vercel serverless
-const { createPool, createDb } = require('../server/db');
+// Super simplified Events API endpoint for Vercel
+const { Pool } = require('@neondatabase/serverless');
 
 module.exports = async (req, res) => {
   console.log("Events API called:", req.url);
   
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS, POST, PUT, DELETE');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
   // Handle OPTIONS request (preflight)
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // Create a new connection for this request
+  // Only handle GET requests for now to fix the display issue
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   let pool;
   try {
-    // Create a fresh pool for this request
-    pool = createPool();
+    // Get database connection string
+    const connectionString = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
     
-    // Create db instance
-    const db = createDb(pool);
-    
-    // Handle GET request (list events)
-    if (req.method === 'GET') {
-      console.log("Fetching events list");
-      
-      // Use raw SQL for simplicity and reliability
-      const result = await pool.query(`
-        SELECT * FROM events 
-        ORDER BY date DESC
-        LIMIT 100
-      `);
-      
-      console.log(`Retrieved ${result.rows.length} events`);
-      return res.status(200).json(result.rows);
+    if (!connectionString) {
+      console.error("No database connection string available");
+      return res.status(500).json({ error: 'Database configuration missing' });
     }
     
-    // Handle POST request (create event)
-    else if (req.method === 'POST') {
-      console.log("Creating new event");
-      
-      const eventData = req.body;
-      
-      if (!eventData || !eventData.name || !eventData.date || !eventData.venueId) {
-        return res.status(400).json({ error: 'Missing required event fields' });
-      }
-      
-      // Insert new event with raw SQL
-      const result = await pool.query(`
-        INSERT INTO events (name, description, date, end_date, venue_id, capacity, price, category, image, created_by, status, is_published, live_status, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
-        RETURNING *
-      `, [
-        eventData.name, 
-        eventData.description || '',
-        eventData.date,
-        eventData.endDate || eventData.date,
-        eventData.venueId,
-        eventData.capacity || 0,
-        eventData.price || 0,
-        eventData.category || 'Other',
-        eventData.image || '',
-        eventData.createdBy || 1,
-        eventData.status || 'upcoming',
-        eventData.isPublished || true,
-        eventData.liveStatus || true
-      ]);
-      
-      return res.status(201).json(result.rows[0]);
-    }
+    // Create direct connection pool
+    pool = new Pool({ connectionString });
     
-    // Handle other methods
-    else {
-      return res.status(405).json({ error: 'Method not allowed' });
-    }
+    console.log("Running events query...");
+    
+    // Simple query to get events
+    const result = await pool.query(`
+      SELECT * FROM events
+      ORDER BY date DESC
+      LIMIT 50
+    `);
+    
+    console.log(`Got ${result.rows.length} events`);
+    
+    // Return result
+    return res.status(200).json(result.rows);
   } catch (error) {
-    console.error("Error processing event request:", error);
+    console.error("Error:", error);
     return res.status(500).json({ 
-      error: 'Database operation failed', 
+      error: 'Could not fetch events',
       message: error.message
     });
   } finally {
-    // Always close the pool when done
+    // Close pool
     if (pool) {
       try {
         await pool.end();
-        console.log("Database connection closed");
       } catch (err) {
-        console.error("Error closing database connection:", err);
+        console.error("Error closing pool:", err);
       }
     }
   }

@@ -69,8 +69,8 @@ export const db = getSharedDb();
 // Run a test query to verify connection (only in non-production)
 if (process.env.NODE_ENV !== 'production') {
   console.log("Testing database connection...");
-  db.select({ now: sql`NOW()` })
-    .execute()
-    .then(result => console.log("✅ Database connection test successful:", result))
+  // Use raw SQL query via pool instead of Drizzle ORM
+  getSharedPool().query('SELECT NOW() as now')
+    .then(result => console.log("✅ Database connection test successful:", result.rows[0]))
     .catch(err => console.error("❌ Database connection test failed:", err));
 }
