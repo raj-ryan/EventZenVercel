@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "tsx server/index.ts",
-    "build": "npm install && vite build && mkdir -p dist/api && cp -r api/* dist/api/ && cp -r mongo-data dist/",
+    "build": "npm install && vite build && mkdir -p dist/api && cp -r api/* dist/api/ && cp -r api/data dist/api/ && cp -r mongo-data dist/",
     "postbuild": "cp -r dist/public/* dist/ || true",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
