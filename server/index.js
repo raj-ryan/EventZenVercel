@@ -24,6 +24,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// Set JSON headers for all API routes
+app.use('/api', (req, res, next) => {
+  res.setHeader('Content-Type', 'application/json');
+  next();
+});
+
 // Register all API routes
 registerRoutes(app);
 

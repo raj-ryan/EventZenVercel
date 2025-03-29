@@ -62,8 +62,12 @@ export default function BookEventModal({ isOpen, onClose, event }: BookEventModa
       
       console.log("Submitting booking with data:", finalBookingData);
       
-      // Use direct API path to ensure server routing
-      const response = await fetch('/api/bookings', {
+      // Use absolute URL to ensure proper routing
+      const baseUrl = window.location.origin;
+      const url = `${baseUrl}/api/bookings`;
+      console.log('Booking to absolute URL:', url);
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

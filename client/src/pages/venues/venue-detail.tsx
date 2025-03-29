@@ -43,21 +43,31 @@ export default function VenueDetail() {
     queryFn: async () => {
       console.log('Fetching venue with ID:', params?.id);
       try {
-        // Use direct fetch to ensure proper API routing
-        const response = await fetch(`/api/venues/${params?.id}`, {
+        // Use window.location.origin to ensure absolute URL
+        const baseUrl = window.location.origin;
+        const url = `${baseUrl}/api/venues/${params?.id}`;
+        console.log('Fetching from absolute URL:', url);
+        
+        const response = await fetch(url, {
+          method: 'GET',
           headers: {
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
           }
         });
         
         if (!response.ok) {
-          throw new Error(`Failed to fetch venue: ${response.status}`);
+          const errorText = await response.text();
+          console.error('Error response:', errorText);
+          throw new Error(`Failed to fetch venue: ${response.status} ${errorText}`);
         }
         
         // Check content type
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
           console.error('Non-JSON response received:', contentType);
+          const text = await response.text();
+          console.error('Response body:', text);
           throw new Error('Server returned non-JSON response');
         }
         

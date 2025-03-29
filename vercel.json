@@ -22,7 +22,24 @@
       "headers": {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS"
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "src": "/api/events/(\\d+)",
+      "dest": "api/events.js?id=$1",
+      "methods": ["GET"],
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "src": "/api/venues/(\\d+)",
+      "dest": "api/venues.js?id=$1",
+      "methods": ["GET"],
+      "headers": {
+        "Content-Type": "application/json"
       }
     },
     {

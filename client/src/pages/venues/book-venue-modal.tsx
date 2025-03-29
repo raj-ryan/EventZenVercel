@@ -113,8 +113,12 @@ export default function BookVenueModal({ venue, isOpen, onClose }: BookVenueModa
       
       console.log('Venue booking data being sent:', bookingData);
       
-      // Use direct API path to ensure server routing
-      const response = await fetch('/api/venue-bookings', {
+      // Use absolute URL to ensure proper routing
+      const baseUrl = window.location.origin;
+      const url = `${baseUrl}/api/bookings`;
+      console.log('Venue booking to absolute URL:', url);
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
